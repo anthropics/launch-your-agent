@@ -8,16 +8,31 @@
 
 ## Setup (every terminal)
 
-Make getting the key in as low-friction as possible. **First check whether `ANTHROPIC_API_KEY` is already set in the shell env** — many founders will already have it exported, or will happily set it that way (`export ANTHROPIC_API_KEY=…` in their own terminal); if it's there, skip the ask entirely and copy it into `.env` without printing it. Otherwise pre-create `./my-agent/.env` (chmod 600, in `.gitignore`) with a placeholder and have the founder paste the key into the file via its **absolute path** (their terminal's cwd isn't yours). The only hard rule is that the key never lands in the chat or an exported transcript — if it does, tell them to rotate it.
+Make auth as low-friction as possible — the ladder, in order:
+
+1. **`ANTHROPIC_API_KEY` already in the shell env** — many founders have it exported. Skip the ask entirely; copy it into `.env` without printing it.
+2. **`ant auth login`** (browser OAuth; `brew install anthropics/tap/ant` if missing) — **no key at all**: nothing to create, paste, or rotate. The founder types it in their own terminal (or `! ant auth login` in-session). Credentials land in `~/.config/anthropic/credentials/<profile>.json` — non-secret fields include `workspace_id`, `workspace_name`, `organization_name`: read the workspace for Console links. curl rides the same token via `Authorization: Bearer` (verified working against all CMA endpoints).
+3. **Paste into `./my-agent/.env`** (chmod 600, in `.gitignore`) via its **absolute path** (their terminal's cwd isn't yours), key created at platform.claude.com → API keys.
+
+The only hard rule is that a key never lands in the chat or an exported transcript — if it does, tell them to rotate it.
 
 ```bash
-set -a; source .env; set +a      # ANTHROPIC_API_KEY=sk-ant-...  (founder-created at platform.claude.com → API keys)
+[ -f .env ] && { set -a; source .env; set +a; }
 BASE=https://api.anthropic.com/v1
-H=(-H "x-api-key: $ANTHROPIC_API_KEY" -H "anthropic-version: 2023-06-01" \
+# auth: API key if present, else the ant CLI's OAuth token
+if [ -n "${ANTHROPIC_API_KEY:-}" ] && [ "$ANTHROPIC_API_KEY" != "paste-your-key-here" ]; then
+  AUTH=(-H "x-api-key: $ANTHROPIC_API_KEY")
+else
+  TOKEN=$(python3 -c "import json; print(json.load(open('$HOME/.config/anthropic/credentials/default.json'))['access_token'])")
+  AUTH=(-H "Authorization: Bearer $TOKEN")
+fi
+H=("${AUTH[@]}" -H "anthropic-version: 2023-06-01" \
    -H "anthropic-beta: managed-agents-2026-04-01" -H "content-type: application/json")
 ```
 
-When the founder creates the key, have them note **which workspace it belongs to** — every object created with it lands in that workspace, and the Console only shows the workspace currently selected (this is the answer to "I can't see it in the Console").
+Put that fallback in a shared `_auth.sh` that every script sources. Two `ant`-path caveats: the raw OAuth token **expires** (`expires_at` in the credentials file) — any `ant` command refreshes it (`ant beta:models list >/dev/null`), so refresh before resuming after a long gap; and `ant` ≤1.9.x has **no `beta:deployments` command** — deployments go through curl+bearer. Also note `ant … list --format json` emits *concatenated* pretty-printed JSON docs, not an array — parse with a `json.JSONDecoder().raw_decode` loop, not `json.load`.
+
+Whichever rung: note **which workspace the auth belongs to** (the `ant` login prints it; for a key, the founder notes it at creation) — every object created lands in that workspace, and the Console only shows the workspace currently selected (this is the answer to "I can't see it in the Console").
 
 Save every returned id into `IDS.env` immediately (`echo "AGENT_ID=..." >> IDS.env`); load it with `set -a; source IDS.env; set +a` so child processes (python parsers, scripts) see the variables, and make every launch step read `IDS.env` first and skip objects that already exist, so a failed step can be re-run without creating duplicates. Pattern for readable errors: `-o /tmp/resp.json -w '%{http_code}\n'`. **Parse responses with python, not jq** — session payloads embed the agent's `system` prompt with literal newlines/control characters that jq rejects:
 
@@ -144,6 +159,8 @@ curl -sS -N --fail-with-body "$BASE/sessions/$SESSION_ID/events/stream" "${H[@]}
 curl -sS "$BASE/sessions/$SESSION_ID" "${H[@]}" -o /tmp/sess.json
 python3 -c "import json; d=json.JSONDecoder(strict=False).decode(open('/tmp/sess.json').read()); print(d['status'], [e.get('result') for e in d.get('outcome_evaluations',[])])"
 # Full history (filterable): GET $BASE/sessions/$SESSION_ID/events?types[]=agent.tool_use
+# Pagination: ?limit=100&page=<next_page>; the response carries next_page (absent on the
+# last page). Events are append-only, so completed pages can be cached (the run viewer does).
 ```
 Run the first poll in the foreground and confirm it parses before putting the loop in a background task — a poller that errors silently every iteration looks like "still running" for ten minutes.
 Narrate: `agent.message` (text), `agent.tool_use` (name), `span.outcome_evaluation_end` (`result` + `explanation`), `session.status_idle` (`stop_reason`: `end_turn` = done, `requires_action` = answer it), `session.error`.
