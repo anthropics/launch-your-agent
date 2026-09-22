@@ -26,7 +26,7 @@
       </div>
     </div>
     <div class="stats">
-      <div class="stat"><div class="stat-k">Model</div><div class="stat-v">claude-opus-4-8</div></div>
+      <div class="stat"><div class="stat-k">Model</div><div class="stat-v">claude-opus-5-5</div></div>
       <div class="stat"><div class="stat-k">Runs</div><div class="stat-v">Mon 7:00 <span class="dim">PT</span></div></div>
       <!-- once live, every ID on this page links to its Console deep link, e.g.
            <a class="console" href="https://platform.claude.com/workspaces/<workspace>/agents/<AGENT_ID>">agent_…</a>
@@ -70,7 +70,7 @@
         <span class="env-tab">📦 environment · type: cloud · networking: unrestricted · packages: none</span>
 
         <div class="node key">
-          <div class="node-head"><span class="node-icon">🤖</span><h2>Agent — competitor-digest</h2><span class="node-meta"><b>claude-opus-4-8</b> · v1 at launch</span></div>
+          <div class="node-head"><span class="node-icon">🤖</span><h2>Agent — competitor-digest</h2><span class="node-meta"><b>claude-opus-5-5</b> · v1 at launch</span></div>
           <div class="node-body">
             <div class="field"><div class="field-k">system · the job</div>
               <p class="small">Researches the 5 named competitors' public sites, pricing pages, and changelogs; writes a weekly digest to <code>/mnt/session/outputs/digest.md</code>.</p></div>
@@ -182,7 +182,7 @@
           <div class="ver-tag">v3</div>
           <div class="ver-what">Lock networking to the competitor sites only</div>
           <div class="ver-why">Hardening — unrestricted is fine while read-only</div>
-          <div class="ver-how">Environment <span class="mono">networking: limited</span> + <span class="mono">allowed_hosts</span></div>
+          <div class="ver-how">Web tools <span class="mono">allowed_domains</span>, plus environment <span class="mono">networking: limited</span> + <span class="mono">allowed_hosts</span></div>
         </div>
         <div class="ver">
           <div class="ver-tag">always</div>

@@ -8,7 +8,7 @@
   },
   "agent": {
     "name": "competitor-digest",
-    "model": "claude-opus-4-8",
+    "model": "claude-opus-5-5",
     "model_rationale": "Newest Opus-class — the default; quality first, a weekly run still costs cents.",
     "version": null,
     "system_summary": "Researches the 5 named competitors' public sites, pricing pages, and changelogs; writes a weekly digest to /mnt/session/outputs/digest.md.",
@@ -95,7 +95,7 @@
     {
       "what": "Lock networking down to only the competitor sites",
       "why_deferred": "Hardening — unrestricted is fine while the agent is read-only",
-      "how": "Switch the environment to networking: limited with the competitor domains in allowed_hosts"
+      "how": "Set allowed_domains on web_search / web_fetch to the competitor domains; also switch the environment to networking: limited with the same domains in allowed_hosts"
     },
     {
       "what": "Re-run the 3 eval cases before promoting any new agent version",
