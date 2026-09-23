@@ -48,7 +48,7 @@ Anthropic's own framing of the architecture (from the engineering blog) is **bra
 | **Session** | Q5 = on-demand; also every eval run | `LAUNCH.md`, IDs in `IDS.env` | header status | `POST /v1/sessions` | Quickstart |
 | **Events** (kickoff, steering, interrupts, confirmations) | Q2 (kickoff content), Q6 (confirmations) | `kickoff.json`, watch section of LAUNCH.md | — (live view stays in Console) | `POST /sessions/:id/events`, SSE stream | Events-and-streaming docs |
 | **Outcome** (rubric + grader + iteration bound) | Q2 done, Q2b evidence | `outcome.md`, `first_prompt.txt`, `kickoff.json` | Outcome | `user.define_outcome` event | CMA_verify_with_outcome_grader; DCF example |
-| **Files API** | Q2b eval cases, Q3 on-hand inputs, Q4 output retrieval | `evals/` inputs, output-fetch lines in LAUNCH.md | Evals | `/v1/files` (upload, `?scope_id=` list, download) | Outcomes docs "Retrieving deliverables" |
+| **Files API** | Q2b eval cases, Q3 on-hand inputs, Q4 output retrieval | `evals/` inputs, output-fetch lines in LAUNCH.md | Evals | `/v1/files` (upload, `?scope_id=` list, download) | Outcomes docs "Retrieve deliverables" |
 | **Memory stores** | Q7 learning | memory section of build sheet; seed calls in LAUNCH.md | Memory store | `POST /v1/memory_stores` + session `resources[]` | CMA_remember_user_preferences |
 | **Scheduled deployment** | Q5 = recurring | `deployment.json` | Deployment | `POST /v1/deployments` (+ manual `/run` test) | Scheduled-deployments docs "weekly compliance scan" |
 | **Webhooks** | Q5 = event-driven, or unattended monitoring | NEXT-DIRECTIONS entry (their backend subscribes) | Next directions | — | CMA_operate_in_production |
@@ -185,7 +185,7 @@ Everything else a founder raises here is **hardening, not v0** — capture it in
 
 | Concern raised | Next-direction entry (mechanism) |
 |---|---|
-| "Only touch these specific sites/APIs" | Environment `networking: limited` + `allowed_hosts` (+ `allow_mcp_servers` / `allow_package_managers`) |
+| "Only touch these specific sites/APIs" | Two separate controls, usually both: `allowed_domains` (or `blocked_domains`) on the `web_search` / `web_fetch` entries of the toolset's `configs` for what the web tools can reach, and environment `networking: limited` + `allowed_hosts` (+ `allow_mcp_servers` / `allow_package_managers`) for what the sandbox itself (bash, curl, SDKs) can reach — environment networking does not govern the web tools |
 | "Ask me before it runs commands / posts anywhere" | Permission policy `always_ask` on `bash` or the relevant `mcp_toolset` (MCP already defaults to ask) — needs an interface that surfaces confirmations |
 | "Don't let it rewrite our reference docs" | Memory store attached `read_only` |
 | Compliance / data residency | Self-hosted sandbox environment on their infra |
@@ -200,7 +200,7 @@ Everything else a founder raises here is **hardening, not v0** — capture it in
 | "Per-customer memory" (their product) | One store **per end user/customer**, attached per session — pairs with vault-per-user (Q8) |
 | "Memory will get messy over time" | Roadmap note: **Dreams** consolidation (research preview) |
 
-Limits to respect silently: ≤8 stores/session, ≤2,000 memories/store, small focused files.
+Limits to respect silently: ≤8 stores/session, ≤10,000 memories/store, small focused files.
 
 ### Q8. Shape & surface — "Who uses this — just you, your team, or your customers? And where do they interact with it?"
 
@@ -214,7 +214,7 @@ Interface mapping:
 | "Who/where" | What it implies |
 |---|---|
 | Just the founder, terminal is fine | The launch scripts + `ant`/curl ARE the interface; nothing more to build |
-| Founder + small team, want visibility | Console (sessions/tracing) + the **agent-overview page** we generate. A **generated interface** (Claude Code builds it in a follow-up session — graphical output, results viewer over the Files/Sessions API, or a way to interact with the agent) is the standard tailored-extension offer here when it suits the need — v1, not v0. |
+| Founder + small team, want visibility | Console (session list + session viewer) + the **agent-overview page** we generate. A **generated interface** (Claude Code builds it in a follow-up session — graphical output, results viewer over the Files/Sessions API, or a way to interact with the agent) is the standard tailored-extension offer here when it suits the need — v1, not v0. |
 | Their customers, inside their product | Their app calls the CMA API: session-per-user(or per-job), **vault per end user** (`metadata.external_user_id`), webhooks for completion, their own UI streams events / shows outputs / surfaces `always_ask` confirmations |
 
 Also captured here: model & budget posture — default newest Opus-class (quality first; runs still cost cents); drop to Sonnet-class only if they explicitly want cheaper/faster runs; `speed: fast` only if they ask about latency.
