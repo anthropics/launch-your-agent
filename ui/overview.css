@@ -1,9 +1,10 @@
 /* Copyright 2026 Anthropic PBC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-/* Stylesheet for agent-overview.html. Copied once into my-agent/ alongside the
-   generated page; the HTML links it relatively (<link href="overview.css">).
-   Edit the HTML's content slots between regenerations — this file stays put. */
+/* Stylesheet for agent-overview.html. Spliced into the generated page's <head>
+   (replacing <link href="overview.css">) by a shell one-liner right after the
+   first Write, so the page is self-contained. This file is the source — never
+   hand-edit the inlined copy; edit the HTML's content slots only. */
 
 :root {
   /* warm paper palette (light) */
